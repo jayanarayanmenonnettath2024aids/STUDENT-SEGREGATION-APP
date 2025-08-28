@@ -274,6 +274,10 @@ def kpi_counts(filters):
 @app.route("/", methods=["GET"])
 def home():
     return redirect(url_for('login'))
+    
+@app.route("/health")
+def health(): 
+    return "ok", 200
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -557,3 +561,4 @@ def export_excel():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
