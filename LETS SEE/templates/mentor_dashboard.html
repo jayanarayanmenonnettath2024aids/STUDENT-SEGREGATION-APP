@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block title %}Mentor Dashboard{% endblock %}
+{% block content %}
+<!-- Paste this <style> block near the top of mentor_dashboard.html inside the content block -->
+<style>
+  :root{
+    /* Mentor-specific palette (distinct from Admin) */
+    --mentor-primary:#0ea5a5;    /* teal */
+    --mentor-deep:#0b7285;       /* deep teal-blue */
+    --mentor-accent:#d946ef;     /* soft magenta accent */
+  }
+
+  /* Ensure page can host the fixed overlay */
+  html, body{
+    height: 100%;
+  }
+  body{
+    position: relative;           /* needed for the ::before background layer */
+    background: transparent;      /* gradient is drawn via ::before */
+  }
+
+  /* Seamless fixed gradient background (stays put on scroll) */
+  body::before{
+    content: "";
+    position: fixed;
+    inset: 0;                     /* top/right/bottom/left: 0 */
+    z-index: -1;                  /* behind all content */
+    background:
+      /* top-left teal glow: slightly stronger than Admin for a distinct vibe */
+      radial-gradient(1200px 650px at 14% 10%, rgba(14,165,165,0.56) 0%, rgba(14,165,165,0.12) 46%, rgba(14,165,165,0) 66%),
+      /* top-right magenta accent */
+      radial-gradient(1000px 540px at 86% 18%, rgba(217,70,239,0.40) 0%, rgba(217,70,239,0.10) 54%, rgba(217,70,239,0) 72%),
+      /* subtle vignette for depth */
+      radial-gradient(2100px 1200px at 50% 50%, rgba(12,18,32,0) 60%, rgba(12,18,32,0.22) 100%),
+      /* cool base sweep */
+      linear-gradient(135deg, #e8fbff 0%, #def3ff 32%, #eef6ff 60%, #ffffff 100%);
+    background-repeat: no-repeat;
+    background-size: cover;       /* ensures coverage on ultra-wide screens */
+    pointer-events: none;
+    will-change: transform;
+  }
+
+  /* Card elevation to pop over gradient */
+  .app-card{
+    background:#fff;
+    border:1px solid rgba(231,238,248,.8);
+    border-radius:16px;
+    box-shadow:
+      0 18px 42px rgba(8,17,37,.15),
+      0 3px 10px rgba(8,17,37,.08),
+      0 0 0 1px rgba(255,255,255,.6) inset;
+    backdrop-filter:saturate(115%) blur(2px);
+  }
+
+  /* Mentor primary button tone (teal) */
+  .btn-primary{
+    background: var(--mentor-deep);
+    border-color: var(--mentor-deep);
+  }
+  .btn-primary:hover{
+    background: #0a6374;
+    border-color: #0a6374;
+  }
+
+  /* Optional: gradient text accent for section headings */
+  .h4, h4{
+    background: linear-gradient(90deg, var(--mentor-deep), var(--mentor-accent));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Subtle sheen on table header */
+  .table thead.table-light{
+    background: linear-gradient(180deg, #f7fbff 0%, #f1f7ff 100%) !important;
+  }
+
+  /* Slightly tighter padding for small screens */
+  @media (max-width: 576px){
+    .app-card.p-3{ padding: .9rem !important; }
+  }
+</style>
+
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+  <h2 class="h4 m-0">Mentor Dashboard</h2>
+
+  <!-- Right-side actions: Change Password -->
+  <div class="d-flex align-items-center gap-2">
+    <a href="{{ url_for('change_password') }}" class="btn btn-outline-secondary btn-sm">
+      Change password
+    </a>
+  </div>
+</div>
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <!-- Filters -->
+  <form method="get" class="d-flex flex-wrap gap-2">
+    <select name="dept" class="form-select form-select-sm w-auto">
+      <option value="">All depts</option>
+      {% for d in depts %}
+        <option value="{{ d }}" {% if filters.dept == d %}selected{% endif %}>{{ d }}</option>
+      {% endfor %}
+    </select>
+    <select name="sec" class="form-select form-select-sm w-auto">
+      <option value="">All sections</option>
+      {% for s in secs %}
+        <option value="{{ s }}" {% if filters.sec == s %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+    <select name="category" class="form-select form-select-sm w-auto">
+      <option value="">All categories</option>
+      <option value="A" {% if filters.category == 'A' %}selected{% endif %}>A</option>
+      <option value="B" {% if filters.category == 'B' %}selected{% endif %}>B</option>
+      <option value="C" {% if filters.category == 'C' %}selected{% endif %}>C</option>
+    </select>
+    <select name="status" class="form-select form-select-sm w-auto">
+      <option value="">All</option>
+      <option value="completed" {% if filters.status == 'completed' %}selected{% endif %}>Completed</option>
+      <option value="pending" {% if filters.status == 'pending' %}selected{% endif %}>Pending</option>
+    </select>
+    <input type="text" class="form-control form-control-sm w-auto" name="q" value="{{ filters.q or '' }}" placeholder="Search name" />
+    <button class="btn btn-primary btn-sm" type="submit">Filter</button>
+  </form>
+</div>
+
+<div class="app-card p-0">
+  {% if students and students|length > 0 %}
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Roll</th>
+          <th>Name</th>
+          <th>Dept</th>
+          <th>Sec</th>
+          <th>Category</th>
+          <th>Remarks</th>
+          <th>Saved By</th>
+          <th>Saved At</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in students %}
+        <tr>
+          <td>{{ sanitize(s.roll) }}</td>
+          <td>{{ sanitize(s.name) }}</td>
+          <td>{{ sanitize(s.dept) }}</td>
+          <td>{{ sanitize(s.sec) }}</td>
+          <td>
+            {% if s.category == "A" %}
+              <span class="badge rounded-pill text-bg-success">A</span>
+            {% elif s.category == "B" %}
+              <span class="badge rounded-pill text-bg-warning">B</span>
+            {% elif s.category == "C" %}
+              <span class="badge rounded-pill text-bg-danger">C</span>
+            {% else %}
+              <span class="badge rounded-pill text-bg-secondary">-</span>
+            {% endif %}
+          </td>
+          <td class="text-truncate" style="max-width:260px">{{ sanitize(s.remarks) }}</td>
+          <td>{{ sanitize(s.saved_by) }}</td>
+          <td>{{ s._saved_at_hr }}</td>
+          <td><a class="btn btn-sm btn-outline-primary" href="{{ url_for('student_detail', student_id=s.id) }}">View</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <div class="p-5 text-center text-muted">Nothing to assess under current filters.</div>
+  {% endif %}
+</div>
+
+{% endblock %}

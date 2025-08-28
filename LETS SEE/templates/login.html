@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Sign in{% endblock %}
+{% block content %}
+
+<style>
+  :root{
+    --brand:#1f4ed8;          /* deep blue */
+    --brand-dark:#1536a3;     /* darker blue */
+    --amber:#f59e0b;          /* warm amber/yellow */
+    --ink:#0b1220;            /* very dark blue for vignette */
+    --deep-sky:#cfe1ff;       /* pale blue stop */
+  }
+
+  /* Darker, high-contrast layered background */
+  body{
+    min-height:100vh;
+    background:
+      /* top-left intense blue glow */
+      radial-gradient(1200px 650px at 12% 10%, rgba(31,78,216,0.40) 0%, rgba(31,78,216,0.06) 45%, rgba(31,78,216,0) 60%),
+      /* top-right amber glow */
+      radial-gradient(900px 520px at 88% 18%, rgba(245,158,11,0.35) 0%, rgba(245,158,11,0.06) 50%, rgba(245,158,11,0) 65%),
+      /* subtle vignette edges */
+      radial-gradient(1600px 900px at 50% 50%, rgba(11,18,32,0) 60%, rgba(11,18,32,0.18) 100%),
+      /* base diagonal */
+      linear-gradient(135deg, #e6eeff 0%, var(--deep-sky) 30%, #eef3ff 55%, #ffffff 100%);
+  }
+
+  .auth-wrap{min-height:calc(100vh - 120px);display:flex;align-items:center;justify-content:center;padding:24px}
+  .auth-card{
+    width:100%;max-width:500px;background:#ffffff;border:1px solid rgba(255,255,255,.6);border-radius:20px;
+    box-shadow:
+      0 30px 70px rgba(8,17,37,.35),
+      0 6px 16px rgba(8,17,37,.15),
+      0 0 0 1px rgba(255,255,255,.5) inset;
+    backdrop-filter: saturate(120%) blur(2px);
+  }
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;color:#0f172a}
+  .brand-dot{
+    width:12px;height:12px;border-radius:50%;
+    background:conic-gradient(from 220deg, var(--amber) 0%, var(--brand) 60%, var(--amber) 100%);
+    box-shadow:0 0 0 5px rgba(31,78,216,.18), 0 0 18px rgba(245,158,11,.35);
+  }
+  .hint{font-size:12px;color:#64748b}
+  .btn-primary{background:var(--brand);border-color:var(--brand)}
+  .btn-primary:hover{background:var(--brand-dark);border-color:var(--brand-dark)}
+  /* Inputs: add subtle focus ring for dark bg */
+  .form-control:focus{
+    border-color: var(--brand);
+    box-shadow: 0 0 0 .2rem rgba(31,78,216,.20);
+  }
+</style>
+
+<div class="auth-wrap container">
+  <div class="auth-card p-4 p-md-5">
+    <div class="brand mb-3">
+      <span class="brand-dot"></span>
+      <span>Mentoring Student Segregation Portal</span>
+    </div>
+    <h1 class="h4 mb-1">Welcome back</h1>
+    <p class="hint mb-4">Sign in to continue</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="mb-3">
+        {% for category, msg in messages %}
+          <div class="alert alert-{{ 'danger' if category=='error' else category }} py-2 mb-2">{{ msg }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% endwith %}
+
+    <form method="post" action="{{ url_for('login') }}">
+      <div class="mb-3">
+        <label class="form-label">Username</label>
+        <input type="text" class="form-control" name="username" placeholder="Enter username" required autofocus>
+      </div>
+      <div class="mb-2">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-control" name="password" placeholder="Enter password" required>
+      </div>
+      <div class="d-grid mt-3">
+        <button type="submit" class="btn btn-primary">Sign in</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

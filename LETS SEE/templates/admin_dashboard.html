@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+
+<style>
+  :root{
+    --brand:#1f4ed8;
+    --amber:#f59e0b;
+  }
+
+  /* Ensure the page establishes a positioning context */
+  html, body{
+    height: 100%;
+  }
+  body{
+    position: relative;    /* needed for the ::before overlay */
+    background: transparent;  /* background will be drawn by ::before */
+  }
+
+  /* Fixed, seamless background layer that spans the viewport at all times */
+  body::before{
+    content: "";
+    position: fixed;       /* fixed to the viewport, not the content */
+    inset: 0;              /* top:0; right:0; bottom:0; left:0 */
+    z-index: -1;           /* behind all content */
+    background:
+      radial-gradient(1300px 700px at 12% 8%, rgba(31,78,216,0.48) 0%, rgba(31,78,216,0.10) 46%, rgba(31,78,216,0) 64%),
+      radial-gradient(1100px 560px at 88% 16%, rgba(245,158,11,0.40) 0%, rgba(245,158,11,0.10) 52%, rgba(245,158,11,0) 70%),
+      radial-gradient(2200px 1200px at 50% 50%, rgba(12,18,32,0) 60%, rgba(12,18,32,0.22) 100%),
+      linear-gradient(135deg, #e7efff 0%, #dae5ff 36%, #eef3ff 62%, #ffffff 100%);
+    background-repeat: no-repeat;
+    background-size: cover;   /* fill horizontally and vertically */
+    pointer-events: none;     /* never capture clicks */
+    will-change: transform;   /* smoother on some browsers */
+  }
+</style>
+
+
+<div class="p-0">
+  <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <h1 class="h4 m-0">📊 Admin Dashboard</h1>
+
+    <a
+      href="{{ url_for('export_excel',
+                       dept=filters.dept or '',
+                       sec=filters.sec or '',
+                       category=filters.category or '',
+                       status=filters.status or '',
+                       q=filters.q or '') }}"
+      class="btn btn-success">
+      ⬇️ Export
+    </a>
+  </div>
+
+  <!-- KPIs (filtered) -->
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-md-2">
+      <div class="app-card p-3 text-center">
+        <div class="text-muted small">Total</div>
+        <div class="fs-4 fw-semibold">{{ kpis.total }}</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-2">
+      <div class="app-card p-3 text-center">
+        <div class="text-muted small">Category A</div>
+        <div class="fs-4 fw-semibold text-success">{{ kpis.a }}</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-2">
+      <div class="app-card p-3 text-center">
+        <div class="text-muted small">Category B</div>
+        <div class="fs-4 fw-semibold text-warning">{{ kpis.b }}</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-2">
+      <div class="app-card p-3 text-center">
+        <div class="text-muted small">Category C</div>
+        <div class="fs-4 fw-semibold text-danger">{{ kpis.c }}</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-2">
+      <div class="app-card p-3 text-center">
+        <div class="text-muted small">Completed</div>
+        <div class="fs-4 fw-semibold text-primary">{{ kpis.completed }}</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-2">
+      <div class="app-card p-3 text-center">
+        <div class="text-muted small">Pending</div>
+        <div class="fs-4 fw-semibold">{{ kpis.pending }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <form method="get" class="app-card p-3 mb-3">
+    <div class="row g-2">
+      <div class="col-6 col-md-2">
+        <label class="form-label small">Dept</label>
+        <select name="dept" class="form-select form-select-sm">
+          <option value="">All</option>
+          {% for d in depts %}
+            <option value="{{ d }}" {% if filters.dept == d %}selected{% endif %}>{{ d }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label small">Section</label>
+        <select name="sec" class="form-select form-select-sm">
+          <option value="">All</option>
+          {% for s in secs %}
+            <option value="{{ s }}" {% if filters.sec == s %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label small">Category</label>
+        <select name="category" class="form-select form-select-sm">
+          <option value="">All</option>
+          <option value="A" {% if filters.category == "A" %}selected{% endif %}>A</option>
+          <option value="B" {% if filters.category == "B" %}selected{% endif %}>B</option>
+          <option value="C" {% if filters.category == "C" %}selected{% endif %}>C</option>
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label small">Status</label>
+        <select name="status" class="form-select form-select-sm">
+          <option value="">All</option>
+          <option value="completed" {% if filters.status == "completed" %}selected{% endif %}>Completed</option>
+          <option value="pending" {% if filters.status == "pending" %}selected{% endif %}>Pending</option>
+        </select>
+      </div>
+      <div class="col-12 col-md-3">
+        <label class="form-label small">Search</label>
+        <input type="text" class="form-control form-control-sm" name="q" value="{{ filters.q or '' }}" placeholder="Name or Roll">
+      </div>
+      <div class="col-12 col-md-1 d-grid">
+        <label class="form-label small opacity-0">.</label>
+        <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+      </div>
+    </div>
+  </form>
+
+  <!-- Table -->
+  <div class="app-card p-0">
+    {% if students and students|length > 0 %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Roll</th>
+              <th>Name</th>
+              <th>Dept</th>
+              <th>Sec</th>
+              <th>Category</th>
+              <th>Remarks</th>
+              <th>Saved By</th>
+              <th>Saved At</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in students %}
+            <tr>
+              <td>{{ sanitize(s.roll) }}</td>
+              <td>{{ sanitize(s.name) }}</td>
+              <td>{{ sanitize(s.dept) }}</td>
+              <td>{{ sanitize(s.sec) }}</td>
+              <td>
+                {% if s.category == "A" %}
+                  <span class="badge rounded-pill text-bg-success">A</span>
+                {% elif s.category == "B" %}
+                  <span class="badge rounded-pill text-bg-warning">B</span>
+                {% elif s.category == "C" %}
+                  <span class="badge rounded-pill text-bg-danger">C</span>
+                {% else %}
+                  <span class="badge rounded-pill text-bg-secondary">-</span>
+                {% endif %}
+              </td>
+              <td class="text-truncate" style="max-width:260px">{{ sanitize(s.remarks) }}</td>
+              <td>{{ sanitize(s.saved_by) }}</td>
+              <td>{{ s._saved_at_hr }}</td>
+              <td>
+                <a href="{{ url_for('student_detail', student_id=s.id) }}" target="_blank" class="btn btn-sm btn-outline-primary">View</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="p-5 text-center text-muted">No students match the current filters.</div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

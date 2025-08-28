@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+{% block title %}Student Details{% endblock %}
+{% block content %}
+
+<!-- Page-wide gradient + remarks sizing improvements -->
+<style>
+  html, body{ height:100%; }
+  body{
+    position: relative;
+    background: transparent;
+  }
+  body::before{
+    content:"";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background:
+      radial-gradient(1200px 650px at 14% 10%, rgba(37,99,235,0.22) 0%, rgba(37,99,235,0.06) 46%, rgba(37,99,235,0) 64%),
+      radial-gradient(1000px 540px at 86% 18%, rgba(168,85,247,0.20) 0%, rgba(168,85,247,0.06) 54%, rgba(168,85,247,0) 72%),
+      radial-gradient(2200px 1200px at 50% 50%, rgba(12,18,32,0) 60%, rgba(12,18,32,0.15) 100%),
+      linear-gradient(135deg, #eef4ff 0%, #f3f0ff 60%, #ffffff 100%);
+    background-repeat:no-repeat;
+    background-size:cover;
+    pointer-events:none;
+  }
+
+  .sd-wrap{max-width:1100px;margin:0 auto}
+  .sd-card{background:#fff;border:1px solid #e9eef5;border-radius:16px;box-shadow:0 4px 16px rgba(16,24,40,.05)}
+  .sd-sticky{position:sticky;top:12px;z-index:2;backdrop-filter:saturate(180%) blur(6px);background:rgba(255,255,255,.78);border:1px solid #e9eef5;border-radius:14px;box-shadow:0 6px 24px rgba(16,24,40,.06)}
+  .sd-title{font-size:14px;font-weight:700;color:#0f172a;letter-spacing:.2px;margin-bottom:8px}
+  .sd-label{font-size:12px;color:#667085}
+  .sd-value{font-weight:600;color:#0f172a}
+
+  .sd-badge{border-radius:999px;padding:6px 12px;font-weight:700;font-size:12px;display:inline-block}
+  .sd-badge-a{background:#e7f8ef;color:#0f7a48;border:1px solid #bcebd2}
+  .sd-badge-b{background:#fff4e5;color:#9a6700;border:1px solid #ffe1b3}
+  .sd-badge-c{background:#ffecec;color:#b42318;border:1px solid #ffd0d0}
+  .sd-badge-d{background:#f1f5f9;color:#475569;border:1px solid #e2e8f0}
+
+  .sd-head-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .sd-idstack{display:flex;flex-wrap:wrap;gap:18px 28px}
+  .sd-cat{display:inline-flex;align-items:center;gap:8px}
+  .sd-cat-label{font-size:12px;color:#64748b}
+
+  /* Read-only 'Remarks' display at top */
+  .sd-remarks{
+    position:relative;background:#fff;border:1px solid #e5edf7;border-radius:14px;padding:14px 16px;
+    line-height:1.6;color:#0f172a;min-height:112px;
+    max-height: clamp(11.5rem, 28vh, 420px);
+    overflow:hidden;white-space:pre-wrap;overflow-wrap:anywhere;
+  }
+  .sd-remarks.expand{max-height:none}
+  .sd-more{border:0;background:transparent;color:#2563eb;font-weight:600;padding:0;margin-top:6px}
+
+  .sd-bullets{margin:6px 0 0 0;padding-left:18px}
+  .sd-bullets li{margin:2px 0;color:#475569;font-size:13px}
+  .sd-bullet-code{display:inline-block;min-width:90px;font-weight:700;color:#1f2937}
+
+  .sd-field-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  @media (max-width:768px){.sd-field-grid{grid-template-columns:repeat(2,1fr)}}
+  .sd-field{background:#fafafa;border:1px solid #eef2f7;border-radius:10px;padding:12px}
+  .sd-pill{display:inline-flex;gap:8px;align-items:center}
+  .sd-chip{border-radius:14px;border:1px solid #e2e8f0;background:#f8fafc;font-weight:700;font-size:11px;padding:4px 10px;color:#334155}
+  .sd-actions{display:flex;justify-content:flex-end;gap:8px}
+  .sd-save{min-width:120px}
+
+  /* Editable remarks */
+  .sd-remarks-wrap{
+    background:
+      radial-gradient(900px 480px at 12% 5%, rgba(37,99,235,0.16) 0%, rgba(37,99,235,0.00) 60%),
+      radial-gradient(700px 420px at 90% 20%, rgba(168,85,247,0.14) 0%, rgba(168,85,247,0.00) 58%),
+      linear-gradient(135deg, #f4f8ff 0%, #f5f0ff 100%);
+    border: 1px solid rgba(226,232,240,.9);
+    border-radius: 16px;
+    padding: 12px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 10px 24px rgba(15,23,42,.06);
+  }
+  .sd-remarks-input{
+    width: 100%;
+    min-height: clamp(200px, 32vh, 360px);
+    resize: vertical;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 12px 14px;
+    line-height: 1.55;
+    font-size: 14px;
+    color: #0f172a;
+    box-shadow: inset 0 1px 3px rgba(2,8,20,.04);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .sd-remarks-input:focus{
+    outline:none;border-color:#2563eb;
+    box-shadow:0 0 0 .2rem rgba(37,99,235,.18), inset 0 1px 3px rgba(2,8,20,.06);
+  }
+  .sd-remarks-label{font-weight:600;color:#0f172a;margin-bottom:6px}
+</style>
+
+<div class="sd-wrap">
+
+  <!-- Sticky header with category -->
+  <div class="sd-sticky sd-card p-3 mb-3">
+    <div class="sd-head-row">
+      <div class="text-muted small">Student Details</div>
+      <div class="sd-cat">
+        <span class="sd-cat-label">Category</span>
+        {% if student.category == "A" %}
+          <span class="sd-badge sd-badge-a">A</span>
+        {% elif student.category == "B" %}
+          <span class="sd-badge sd-badge-b">B</span>
+        {% elif student.category == "C" %}
+          <span class="sd-badge sd-badge-c">C</span>
+        {% else %}
+          <span class="sd-badge sd-badge-d">-</span>
+        {% endif %}
+      </div>
+      <a href="{{ url_for('mentor_dashboard') if is_mentor else url_for('admin_dashboard') }}" class="btn btn-light btn-sm">← Back</a>
+    </div>
+
+    <div class="sd-idstack mt-2">
+      <div><span class="sd-label">Roll</span> <span class="sd-value ms-1">{{ student.roll }}</span></div>
+      <div><span class="sd-label">Name</span> <span class="sd-value ms-1">{{ student.name }}</span></div>
+      <div><span class="sd-label">Dept</span> <span class="sd-value ms-1">{{ student.dept }}</span></div>
+      <div><span class="sd-label">Sec</span> <span class="sd-value ms-1">{{ student.sec }}</span></div>
+    </div>
+  </div>
+
+  <!-- Read-only Remarks + Jargon bullets -->
+  <div class="sd-card p-3 mb-2">
+    <div class="sd-title">Remarks</div>
+    <div id="remarks" class="sd-remarks">{{ student.remarks or "-" }}</div>
+    {% if student.remarks and student.remarks|length > 240 %}
+    <div class="d-flex justify-content-end">
+      <button id="remarksToggle" class="sd-more" type="button"
+              onclick="
+                const el=document.getElementById('remarks');
+                const btn=document.getElementById('remarksToggle');
+                const isExpand=el.classList.toggle('expand');
+                if(isExpand){ el.style.maxHeight='none'; btn.innerText='Show less'; }
+                else{ el.style.maxHeight=''; btn.innerText='Show more'; }
+              ">
+        Show more
+      </button>
+    </div>
+    {% endif %}
+
+    <div class="sd-title mt-3">Jargon guide</div>
+    <ul class="sd-bullets">
+      <li><span class="sd-bullet-code">MTI</span> – Mother Tongue Influence</li>
+      <li><span class="sd-bullet-code">NI OV IMP</span> – Needs Overall Improvement</li>
+      <li><span class="sd-bullet-code">NI SL IMP</span> – Needs Slight Improvement</li>
+      <li><span class="sd-bullet-code">FL</span> – Filler</li>
+      <li><span class="sd-bullet-code">ST</span> – Stuck</li>
+      <li><span class="sd-bullet-code">STM</span> – Stammer</li>
+      <li><span class="sd-bullet-code">FLG</span> – Fluency is Good</li>
+      <li><span class="sd-bullet-code">FLGB</span> – Fluency is Bad</li>
+      <li><span class="sd-bullet-code">CFG</span> – Confidence is Good</li>
+      <li><span class="sd-bullet-code">NV</span> – Nervous</li>
+    </ul>
+  </div>
+
+  {% if is_mentor %}
+  <!-- Mentor: editable Evaluation + editable remarks -->
+  <form method="POST" action="{{ url_for('save_assessment') }}" class="sd-card p-3">
+    <input type="hidden" name="student_id" value="{{ student.id }}">
+
+    <div class="d-flex align-items-center justify-content-between mb-2">
+      <div class="sd-title mb-0">Evaluation</div>
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearAllRadios()">
+        Clear all selections
+      </button>
+    </div>
+
+    <div class="sd-field-grid">
+      <div class="sd-field">
+        <div class="sd-label mb-1">Fluency</div>
+        <div class="d-flex flex-wrap gap-2">
+          {% for opt in ["FLOW_MED","FLOW_GOOD","FLOW_REFINED"] %}
+          <label class="sd-pill">
+            <input class="form-check-input" type="radio" name="fluency" value="{{ opt }}" {% if student.fluency == opt %}checked{% endif %}>
+            <span class="sd-chip">{{ opt }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="sd-field">
+        <div class="sd-label mb-1">Stammering</div>
+        <div class="d-flex flex-wrap gap-2">
+          {% for opt in ["STAMMERING_CONT","STAMMERING_MED","STAMMER_FREE"] %}
+          <label class="sd-pill">
+            <input class="form-check-input" type="radio" name="stammering" value="{{ opt }}" {% if student.stammering == opt %}checked{% endif %}>
+            <span class="sd-chip">{{ opt }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="sd-field">
+        <div class="sd-label mb-1">Stuck</div>
+        <div class="d-flex flex-wrap gap-2">
+          {% for opt in ["STUCK_OFTEN","STUCK_FEW"] %}
+          <label class="sd-pill">
+            <input class="form-check-input" type="radio" name="stuck" value="{{ opt }}" {% if student.stuck == opt %}checked{% endif %}>
+            <span class="sd-chip">{{ opt }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="sd-field">
+        <div class="sd-label mb-1">MTI</div>
+        <div class="d-flex flex-wrap gap-2">
+          {% for opt in ["MTI_STRONG","MTI_SLIGHT","MTI_NEARZERO"] %}
+          <label class="sd-pill">
+            <input class="form-check-input" type="radio" name="mti" value="{{ opt }}" {% if student.mti == opt %}checked{% endif %}>
+            <span class="sd-chip">{{ opt }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="sd-field">
+        <div class="sd-label mb-1">Confidence</div>
+        <div class="d-flex flex-wrap gap-2">
+          {% for opt in ["CONF_PANIC","CONF_OK","CONF_IMMACULATE"] %}
+          <label class="sd-pill">
+            <input class="form-check-input" type="radio" name="confidence" value="{{ opt }}" {% if student.confidence == opt %}checked{% endif %}>
+            <span class="sd-chip">{{ opt }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="sd-field">
+        <div class="sd-label mb-1">Improvement</div>
+        <div class="d-flex flex-wrap gap-2">
+          <label class="sd-pill">
+            <input class="form-check-input" type="radio" name="improvement" value="NI_OV_IMP" {% if student.improvement == 'NI_OV_IMP' %}checked{% endif %}>
+            <span class="sd-chip">NI_OV_IMP</span>
+          </label>
+          <label class="sd-pill">
+            <input class="form-check-input" type="radio" name="improvement" value="NI_SL_IMP" {% if student.improvement == 'NI_SL_IMP' %}checked{% endif %}>
+            <span class="sd-chip">NI_SL_IMP</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="sd-field">
+        <div class="sd-label mb-1">Filler</div>
+        <div class="d-flex flex-wrap gap-2">
+          <label class="sd-pill">
+            <input class="form-check-input" type="radio" name="filler" value="FL" {% if student.filler == 'FL' %}checked{% endif %}>
+            <span class="sd-chip">FL</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="sd-field">
+        <div class="sd-label mb-1">Nervous</div>
+        <div class="d-flex flex-wrap gap-2">
+          <label class="sd-pill">
+            <input class="form-check-input" type="radio" name="nervous" value="NV" {% if student.nervous == 'NV' %}checked{% endif %}>
+            <span class="sd-chip">NV</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Editable Remarks with gradient wrapper and larger input -->
+    <div class="mt-3">
+      <label class="sd-remarks-label form-label">Remarks</label>
+      <div class="sd-remarks-wrap">
+        <textarea name="remarks" class="sd-remarks-input" placeholder="Add notes...">{{ student.remarks }}</textarea>
+      </div>
+    </div>
+
+    <div class="sd-actions mt-3">
+      <button type="submit" class="btn btn-primary sd-save">Save</button>
+    </div>
+  </form>
+  {% else %}
+  <!-- Admin: read-only summary only -->
+  <div class="sd-card p-3 mt-2">
+    {% set has_any = student.fluency or student.stammering or student.stuck or student.mti or student.confidence or student.improvement or student.filler or student.nervous %}
+    {% if has_any %}
+      <div class="sd-title">Evaluation Summary</div>
+      <div class="row g-2">
+        <div class="col-6 col-md-4"><div class="sd-label">Fluency</div><div class="sd-value">{{ student.fluency or "-" }}</div></div>
+        <div class="col-6 col-md-4"><div class="sd-label">Stammering</div><div class="sd-value">{{ student.stammering or "-" }}</div></div>
+        <div class="col-6 col-md-4"><div class="sd-label">Stuck</div><div class="sd-value">{{ student.stuck or "-" }}</div></div>
+        <div class="col-6 col-md-4"><div class="sd-label">MTI</div><div class="sd-value">{{ student.mti or "-" }}</div></div>
+        <div class="col-6 col-md-4"><div class="sd-label">Confidence</div><div class="sd-value">{{ student.confidence or "-" }}</div></div>
+        <div class="col-6 col-md-4"><div class="sd-label">Improvement</div><div class="sd-value">{{ student.improvement or "-" }}</div></div>
+        <div class="col-6 col-md-4"><div class="sd-label">Filler</div><div class="sd-value">{{ student.filler or "-" }}</div></div>
+        <div class="col-6 col-md-4"><div class="sd-label">Nervous</div><div class="sd-value">{{ student.nervous or "-" }}</div></div>
+      </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="text-muted small text-end mt-2">
+    Last saved by <span class="fw-semibold">{{ student.saved_by or student.mentor or "-" }}</span> at {{ student._saved_at_hr or format_time(student.updated_at) }}
+  </div>
+
+</div>
+
+<script>
+  function clearAllRadios() {
+    document.querySelectorAll('input[type="radio"]').forEach(r => {
+      r.checked = false;
+      r.setAttribute('aria-checked', 'false');
+      r.removeAttribute('data-state');
+    });
+  }
+</script>
+
+{% endblock %}
